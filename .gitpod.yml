@@ -23,6 +23,31 @@ tasks:
   - command: |
       gp sync-await setup
 
+      mkdir -p "${HOME}/.kube"
+
+      if [ -n "${TF_CLOUD_TOKEN}" ]; then
+        cat >~/.terraformrc <<EOL
+      credentials "app.terraform.io" {
+        token = "${TF_CLOUD_TOKEN}"
+      }
+      EOL
+        terraform -chdir=./infrastructure init
+
+        # This may not exist
+        terraform -chdir=./infrastructure output -json kubeconfig | jq -r > ${HOME}/.kube/config || true
+        chmod 600 ${HOME}/.kube/config || true
+      fi
+
+      if [ -n "${TF_SSH_PUBLIC_KEY_BASE64}" ]; then
+        echo "${TF_SSH_PUBLIC_KEY_BASE64}" | base64 -d > ~/.ssh/tf_rsa.pub
+        export TF_VAR_ssh_public_key_path="${HOME}/.ssh/tf_rsa.pub"
+      fi
+
+      if [ -n "${TF_SSH_PRIVATE_KEY_BASE64}" ]; then
+        echo "${TF_SSH_PRIVATE_KEY_BASE64}" | base64 -d  > ~/.ssh/tf_rsa
+        export TF_VAR_ssh_private_key_path="${HOME}/.ssh/tf_rsa"
+      fi
+
 vscode:
   extensions:
     - donjayamanne.git-extension-pack
