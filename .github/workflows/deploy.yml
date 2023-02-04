@@ -1,0 +1,106 @@
+name: Deploy
+on:
+  push:
+    branches:
+      - main
+defaults:
+  run:
+    working-directory: ./infrastructure
+env:
+  HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+  KUBECONFIG: ${{ github.workspace }}/kubeconfig
+  TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
+  TF_CLOUD_TOKEN: ${{ secrets.TF_CLOUD_TOKEN }}
+  TF_SSH_PRIVATE_KEY_BASE64: ${{ secrets.TF_SSH_PRIVATE_KEY_BASE64 }}
+  TF_SSH_PUBLIC_KEY_BASE64: ${{ secrets.TF_SSH_PUBLIC_KEY_BASE64 }}
+  TF_VAR_cloudflare_api_token: ${{ secrets.TF_VAR_CLOUDFLARE_API_TOKEN }}
+  TF_VAR_cloudflare_zone_id: ${{ secrets.TF_VAR_CLOUDFLARE_ZONE_ID }}
+  TF_VAR_domain_name: ${{ secrets.TF_VAR_DOMAIN_NAME }}
+  TF_VAR_domain_passlist: ${{ secrets.TF_VAR_DOMAIN_PASSLIST }}
+  TF_VAR_ssh_private_key_path: /tmp/ssh
+  TF_VAR_ssh_public_key_path: /tmp/ssh.pub
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform login
+        run: |
+          echo "${{ env.TF_SSH_PRIVATE_KEY_BASE64 }}" | base64 -d > ${TF_VAR_ssh_private_key_path}
+          echo "${{ env.TF_SSH_PUBLIC_KEY_BASE64 }}" | base64 -d > ${TF_VAR_ssh_public_key_path}
+
+          cat >~/.terraformrc <<EOL
+          credentials "app.terraform.io" {
+            token = "${TF_CLOUD_TOKEN}"
+          }
+          EOL
+
+      - run: terraform init
+
+      - name: Terraform plan
+        id: plan
+        run: terraform plan -no-color -out tf.plan
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: tf-plan
+          path: infrastructure/tf.plan
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs:
+      - prepare
+    environment: production
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform login
+        run: |
+          echo "${{ env.TF_SSH_PRIVATE_KEY_BASE64 }}" | base64 -d > ${TF_VAR_ssh_private_key_path}
+          echo "${{ env.TF_SSH_PUBLIC_KEY_BASE64 }}" | base64 -d > ${TF_VAR_ssh_public_key_path}
+
+          cat >~/.terraformrc <<EOL
+          credentials "app.terraform.io" {
+            token = "${TF_CLOUD_TOKEN}"
+          }
+          EOL
+
+      - run: terraform init
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: tf-plan
+          path: infrastructure
+
+      - run: terraform apply tf.plan
+
+      - name: Get Kubeconfig
+        run: |
+          terraform output -json kubeconfig | jq -r > ${KUBECONFIG}
+          chmod 600 ${KUBECONFIG}
+
+      - run: kubectl get nodes
+
+      - name: Install cert-manager
+        run: |
+          curl -sfSL https://raw.githubusercontent.com/mrsimonemms/gitpod-self-hosted/main/install.sh | \
+            CMD=cert_manager \
+            DOMAIN_NAME="$(terraform output -raw domain_name)" \
+            SECRETS="$(terraform output -json cert_manager | jq -cr '.secrets | @base64')" \
+            CLUSTER_ISSUER="$(terraform output -json cert_manager | jq -cr '.cluster_issuer | @base64')" \
+            bash -
+
+      - name: Install Gitpod
+        run: |
+          curl -sfSL https://raw.githubusercontent.com/mrsimonemms/gitpod-self-hosted/main/install.sh | \
+            CMD=install_gitpod \
+            GITPOD_CONFIG="$(terraform output -json gitpod_config | jq -cr '@base64')" \
+            GITPOD_SECRETS="$(terraform output -json gitpod_secrets | jq -cr '@base64')" \
+            bash -
