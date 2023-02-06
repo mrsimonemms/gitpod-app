@@ -88,6 +88,13 @@ jobs:
 
       - run: kubectl get nodes
 
+      - name: Configure CSI driver
+        run: |
+          curl -sfSL https://raw.githubusercontent.com/mrsimonemms/gitpod-self-hosted/main/csi.sh | \
+            CMD=hetzner \
+            HCLOUD_TOKEN="${HCLOUD_TOKEN}" \
+            bash -
+
       - name: Install cert-manager
         run: |
           curl -sfSL https://raw.githubusercontent.com/mrsimonemms/gitpod-self-hosted/main/install.sh | \
