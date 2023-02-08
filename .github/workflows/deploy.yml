@@ -13,6 +13,7 @@ env:
   TF_CLOUD_TOKEN: ${{ secrets.TF_CLOUD_TOKEN }}
   TF_SSH_PRIVATE_KEY_BASE64: ${{ secrets.TF_SSH_PRIVATE_KEY_BASE64 }}
   TF_SSH_PUBLIC_KEY_BASE64: ${{ secrets.TF_SSH_PUBLIC_KEY_BASE64 }}
+  TF_VAR_auth_providers: ${{ secrets.TF_VAR_AUTH_PROVIDERS }}
   TF_VAR_cloudflare_api_token: ${{ secrets.TF_VAR_CLOUDFLARE_API_TOKEN }}
   TF_VAR_cloudflare_zone_id: ${{ secrets.TF_VAR_CLOUDFLARE_ZONE_ID }}
   TF_VAR_domain_name: ${{ secrets.TF_VAR_DOMAIN_NAME }}

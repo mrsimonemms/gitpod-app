@@ -39,6 +39,16 @@ output "domain_name" {
 output "gitpod_config" {
   description = "Gitpod config builder"
   value = {
+    authProviders = [
+      {
+        kind = "secret"
+        name = "public-github"
+      },
+      {
+        kind = "secret"
+        name = "public-gitlab"
+      },
+    ]
     blockNewUsers = {
       enabled  = length(var.domain_passlist) > 0
       passlist = var.domain_passlist
@@ -50,8 +60,35 @@ output "gitpod_config" {
 
 output "gitpod_secrets" {
   description = "Gitpod config secrets"
-  value       = {}
-  sensitive   = true
+  value = {
+    public-github = {
+      provider = {
+        id   = "Public-GitHub"
+        host = "github.com"
+        type = "GitHub"
+        oauth = {
+          clientId     = var.auth_providers.github.client_id
+          clientSecret = var.auth_providers.github.client_secret
+          callBackUrl  = "https://${var.domain_name}/auth/github.com/callback"
+          settingsUrl  = var.auth_providers.github.settings_url
+        }
+      }
+    }
+    public-gitlab = {
+      provider = {
+        id   = "Public-GitLab"
+        host = "gitlab.com"
+        type = "GitLab"
+        oauth = {
+          clientId     = var.auth_providers.gitlab.client_id
+          clientSecret = var.auth_providers.gitlab.client_secret
+          callBackUrl  = "https://${var.domain_name}/auth/gitlab.com/callback"
+          settingsUrl  = var.auth_providers.gitlab.settings_url
+        }
+      }
+    }
+  }
+  sensitive = true
 }
 
 output "kubeconfig" {

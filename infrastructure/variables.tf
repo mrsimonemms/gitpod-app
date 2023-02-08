@@ -32,6 +32,7 @@ variable "cloudflare_api_token" {
 variable "cloudflare_zone_id" {
   description = "Zone ID to place DNS records in"
   type        = string
+  sensitive   = true
 }
 
 
@@ -39,16 +40,41 @@ variable "ssh_public_key_path" {
   description = "Path to public key, used for logging in to VM - passphrases are not supported"
   type        = string
   default     = "~/.ssh/id_rsa.pub"
+  sensitive   = true
 }
 
 variable "ssh_private_key_path" {
   description = "Path to private key, used for logging in to VM - passphrases are not supported"
   type        = string
   default     = "~/.ssh/id_rsa"
+  sensitive   = true
 }
 
 variable "domain_passlist" {
   description = "Passlist for domains that are allowed to sign up to the instance"
   type        = list(string)
   default     = []
+  sensitive   = true
+}
+
+variable "auth_providers" {
+  description = "value"
+  type = map(object({
+    client_id     = string
+    client_secret = string
+    settings_url  = string
+  }))
+  default = {
+    "github" = {
+      client_id     = null
+      client_secret = null
+      settings_url  = null
+    }
+    "gitlab" = {
+      client_id     = null
+      client_secret = null
+      settings_url  = null
+    }
+  }
+  sensitive = true
 }
