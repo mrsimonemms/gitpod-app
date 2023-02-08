@@ -9,7 +9,7 @@ output "cert_manager" {
       }
     }
     # ClusterIssuer configuration
-    cluster_issuer = jsonencode({
+    cluster_issuer = {
       spec = {
         acme = {
           solvers = [
@@ -26,7 +26,7 @@ output "cert_manager" {
           ]
         }
       }
-    })
+    }
   }
 }
 
@@ -38,19 +38,19 @@ output "domain_name" {
 
 output "gitpod_config" {
   description = "Gitpod config builder"
-  value = jsonencode({
+  value = {
     blockNewUsers = {
       enabled  = length(var.domain_passlist) > 0
       passlist = var.domain_passlist
     }
     domain = var.domain_name
-  })
+  }
   sensitive = true
 }
 
 output "gitpod_secrets" {
   description = "Gitpod config secrets"
-  value       = jsonencode({})
+  value       = {}
   sensitive   = true
 }
 
