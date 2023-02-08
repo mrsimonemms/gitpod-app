@@ -20,6 +20,13 @@ tasks:
       gp sync-done pre-commit
 
       exit 0
+  - name: Monitoring
+    command: |
+      gp sync-await kubeconfig
+
+      kubectl port-forward -n monitoring deployments/monitoring-grafana 3000:3000 > /dev/null &
+
+      watch kubectl get pods -n gitpod --sort-by='{.metadata.name}' -o wide
   - command: |
       gp sync-await setup
 
@@ -36,6 +43,8 @@ tasks:
         # This may not exist
         terraform -chdir=./infrastructure output -json kubeconfig | jq -r > ${HOME}/.kube/config || true
         chmod 600 ${HOME}/.kube/config || true
+
+        gp sync-done kubeconfig
       fi
 
       if [ -n "${TF_SSH_PUBLIC_KEY_BASE64}" ]; then
@@ -47,6 +56,10 @@ tasks:
         echo "${TF_SSH_PRIVATE_KEY_BASE64}" | base64 -d  > ~/.ssh/tf_rsa
         export TF_VAR_ssh_private_key_path="${HOME}/.ssh/tf_rsa"
       fi
+
+ports:
+  - port: 3000
+    onOpen: notify
 
 vscode:
   extensions:
