@@ -1,5 +1,7 @@
 # Gitpod App
 
+A [Gitpod self-hosted instance](https://github.com/mrsimonemms/gitpod-self-hosted)
+
 <!-- toc -->
 
 * [Open in Gitpod](#open-in-gitpod)
