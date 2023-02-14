@@ -1,12 +1,24 @@
 {
   "packages": [
+    "kubernetes-helm-wrapped",
+    "kubectl",
     "pre-commit",
-    "ruby"
+    "ruby",
+    "terraform",
+    "terraform-docs",
+    "yq-go"
   ],
   "shell": {
     "init_hook": [
       "pre-commit install --install-hooks -t pre-commit -t commit-msg"
-    ]
+    ],
+    "scripts": {
+      "kubeconfig": [
+        "terraform -chdir=$(dirname ${DIRENV_FILE})/infrastructure output -json kubeconfig | jq -r > ${KUBECONFIG}",
+        "chmod 600 ${KUBECONFIG}"
+      ],
+      "watch_pods": "watch kubectl get pods -n gitpod --sort-by=.metadata.name"
+    }
   },
   "nixpkgs": {
     "commit": "52e3e80afff4b16ccb7c52e9f0f5220552f03d04"
