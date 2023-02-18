@@ -1,0 +1,50 @@
+# Backup the database as a nightly MySQL dump
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: db-backup
+  labels:
+    app: gitpod
+    component: db-backup
+spec:
+  concurrencyPolicy: Replace
+  schedule: '@daily'
+  successfulJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: gitpod
+            component: db-backup
+        spec:
+          securityContext:
+            fsGroup: 1001
+          containers:
+          - name: backup
+            image: docker.io/bitnami/mysql:5.7.34-debian-10-r55
+            imagePullPolicy: IfNotPresent
+            securityContext:
+              runAsNonRoot: true
+              runAsUser: 1001
+            env:
+              - name: MYSQL_ROOT_PASSWORD
+                valueFrom:
+                  secretKeyRef:
+                    name: db-password
+                    key: mysql-root-password
+              - name: MYSQL_HOST
+                value: mysql.gitpod.svc.cluster.local
+            volumeMounts:
+              - name: db-backup
+                mountPath: /data/mysql
+            command:
+              - bash
+              - -c
+            args:
+              - "mysqldump --host=${MYSQL_HOST} --user=root --password=${MYSQL_ROOT_PASSWORD} --all-databases --add-drop-table > /data/mysql/dump-$(date --iso-8601).sql"
+          restartPolicy: OnFailure
+          volumes:
+            - name: db-backup
+              persistentVolumeClaim:
+                claimName: db-backup

@@ -1,0 +1,13 @@
+# Persistent volume to store the database backup
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: db-backup
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes:
+    - "ReadWriteOnce"
+  resources:
+    requests:
+      storage: "8Gi"

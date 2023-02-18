@@ -9,6 +9,7 @@ defaults:
 env:
   HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
   KUBECONFIG: ${{ github.workspace }}/kubeconfig
+  KUBE_TEMPLATES_DIR: ${{ github.workspace }}/kubernetes
   TF_CLOUD_ORGANIZATION: ${{ secrets.TF_CLOUD_ORGANIZATION }}
   TF_CLOUD_TOKEN: ${{ secrets.TF_CLOUD_TOKEN }}
   TF_SSH_PRIVATE_KEY_BASE64: ${{ secrets.TF_SSH_PRIVATE_KEY_BASE64 }}
